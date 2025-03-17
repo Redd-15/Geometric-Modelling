@@ -1,3 +1,0 @@
-Volumetrikus modellezés
-=======================
-
