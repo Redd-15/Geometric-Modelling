@@ -1,24 +1,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 
-def plot_results(x_vals, y_vals, lagrange_poly, spline_func):
+def plot_results(x_vals, y_vals, lagrange_poly, spline_func, original_image):
+    """
+    Plot the results of interpolation with the original image as the background.
+    
+    Args:
+        x_vals: List of x-coordinates of the extracted points.
+        y_vals: List of y-coordinates of the extracted points.
+        lagrange_poly: Lagrange interpolation polynomial function.
+        spline_func: Cubic spline interpolation function.
+        original_image: Original image to use as the background.
+    """
     x_range = np.linspace(min(x_vals), max(x_vals), 500)
 
     y_lagrange = lagrange_poly(x_range)
     y_spline = spline_func(x_range)
 
-    plt.scatter(x_vals, y_vals, label="Extracted Points")
-    plt.plot(x_range, y_lagrange, label="Lagrange Interpolation")
-    plt.plot(x_range, y_spline, label="Cubic Spline Interpolation", linestyle='dashed')
+    # Plot the original image as the background
+    plt.imshow(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB), extent=[min(x_vals), max(x_vals), min(y_vals), max(y_vals)], aspect='auto')
+
+    # Plot the extracted points
+    plt.scatter(x_vals, y_vals, color='red', label="Extracted Points", zorder=2)
+
+    # Plot the interpolation results
+    plt.plot(x_range, y_lagrange, color='blue', label="Lagrange Interpolation", zorder=1)
+    plt.plot(x_range, y_spline, color='green', linestyle='dashed', label="Cubic Spline Interpolation", zorder=1)
+
     plt.legend()
     plt.grid(True)
-    plt.title("Graph Data Interpolation")
+    plt.title("Graph Data Interpolation with Original Image")
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.show()
 
-def plot_only_data(x_vals, y_vals):
-    plt.scatter(x_vals, y_vals, label="Extracted Points")
+def plot_only_data(x_vals, y_vals, original_image):
+    plt.imshow(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB), extent=[min(x_vals), max(x_vals), min(y_vals), max(y_vals)], aspect='auto')
+    plt.scatter(x_vals, y_vals, color='red',  label="Extracted Points")
     plt.legend()
     plt.grid(True)
     plt.title("Extracted Data Points")

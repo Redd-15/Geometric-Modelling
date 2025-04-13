@@ -28,7 +28,7 @@ def preprocess_image(image_path, target_color):
     # Placeholder: axis detection should return scale info later
     axes_info = {"x_origin": 50, "y_origin": 450, "x_scale": 1, "y_scale": 1}
     
-    return binary, axes_info, mask
+    return image, binary, axes_info
 
 def detect_curve(binary_image):
     """
