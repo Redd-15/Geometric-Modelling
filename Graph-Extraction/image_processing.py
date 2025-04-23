@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
+from utils import hex_to_bgr
 
-def preprocess_image(image_path, target_color):
+def preprocess_image(image, target_HEX_color):
     """
     Preprocess the image to generate a binary mask for the target color.
     
@@ -11,24 +12,18 @@ def preprocess_image(image_path, target_color):
     
     Returns:
         binary: Binary image where the target color is highlighted.
-        axes_info: Dictionary containing axis information (placeholder).
     """
-    image = cv2.imread(image_path)
-
     COLOR_TRESHOLD = 20 # Allowable color variation
-
+    target_color = hex_to_bgr(target_HEX_color)  # Convert hex color to BGR format
     # Create a mask for the target color
-    lower_bound = np.array(target_color) - COLOR_TRESHOLD  # Allow small variations
+    lower_bound = np.array(target_color) - COLOR_TRESHOLD
     upper_bound = np.array(target_color) + COLOR_TRESHOLD
     mask = cv2.inRange(image, lower_bound, upper_bound)
 
     # Convert the mask to binary format
     _, binary = cv2.threshold(mask, 1, 255, cv2.THRESH_BINARY)
     
-    # Placeholder: axis detection should return scale info later
-    axes_info = {"x_origin": 50, "y_origin": 450, "x_scale": 1, "y_scale": 1}
-    
-    return image, binary, axes_info
+    return binary
 
 def detect_curve(binary_image):
     """

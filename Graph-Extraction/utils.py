@@ -25,3 +25,26 @@ def downsample_points(x_vals, y_vals, num_points):
 
     selected_points = np.array(selected_points)
     return selected_points[:, 0], selected_points[:, 1]
+
+def hex_to_bgr(hex_color):
+    """
+    Convert a hex color code to BGR format for OpenCV.
+    """
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i:i+2], 16) for i in (4, 2, 0))
+
+def linear_interpolation(val, in_min, in_max, out_min, out_max):
+    """
+    Perform linear interpolation to map a value from one range to another.
+    
+    Args:
+        val: The value to interpolate.
+        in_min: Minimum of the input range.
+        in_max: Maximum of the input range.
+        out_min: Minimum of the output range.
+        out_max: Maximum of the output range.
+    
+    Returns:
+        Interpolated value in the output range.
+    """
+    return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
