@@ -238,36 +238,53 @@ class GraphApp:
         and draw a vertical line on the canvas at the corresponding point.
         """
         try:
-            
-            # Ensure the x value is within the valid range
-            if not (self.base_values["x_min"] <= float(self.x_input_entry.get()) <= self.base_values["x_max"]):
-                messagebox.showerror("Error", f"x value must be between {self.base_values['x_min']} and {self.base_values['x_max']}.")
-                return
-            
             # Get the x value from the input field
             x_input = float(self.x_input_entry.get())
-            
-            if self.invert_x_axis.get():
-                x_input = self.base_values["x_max"] - x_input + self.base_values["x_min"]   # Invert x value if the checkbox is checked
-            
-            # Interpolate the x value to the given points
-            x_interpolated_input = linear_interpolation(x_input, self.base_values["x_min"], self.base_values["x_max"], self.grid_corners[0][0], self.grid_corners[1][0])  # Normalize x_input to the given points 
-            
-            # Calculate the corresponding y value using the spline function
-            y_value = linear_interpolation(self.spline_func(x_interpolated_input),  self.grid_corners[0][1], self.grid_corners[1][1], self.base_values["y_min"], self.base_values["y_max"])  # Normalize y_value to the given points
 
-            # Convert the x value to pixel coordinates
+            # Ensure the x value is within the valid range
+            if not (self.base_values["x_min"] <= x_input <= self.base_values["x_max"]):
+                messagebox.showerror("Error", f"x value must be between {self.base_values['x_min']} and {self.base_values['x_max']}.")
+                return
+
+            # Interpolate x_input to pixel coordinates (grid corners)
             if self.invert_x_axis.get():
-                x_pixel = self.grid_corners[1][0] - x_interpolated_input + self.grid_corners[0][0]  # Invert x value if the checkbox is checked
+                x_pixel = linear_interpolation(
+                    x_input,
+                    self.base_values["x_min"],
+                    self.base_values["x_max"],
+                    self.grid_corners[1][0],
+                    self.grid_corners[0][0]  # Reverse the mapping for inverted x-axis
+                )
             else:
-                x_pixel = x_interpolated_input
+                x_pixel = linear_interpolation(
+                    x_input,
+                    self.base_values["x_min"],
+                    self.base_values["x_max"],
+                    self.grid_corners[0][0],
+                    self.grid_corners[1][0]
+                )
+
+            # Use the spline function to calculate the corresponding pixel y value
+            y_pixel = self.spline_func(x_pixel)
+
+            # Interpolate y_pixel back to data coordinates (y_min to y_max)
+            y_value = linear_interpolation(
+                y_pixel,
+                self.grid_corners[1][1],  # Note: Reverse the mapping for y-axis inversion
+                self.grid_corners[0][1],
+                self.base_values["y_min"],
+                self.base_values["y_max"]
+            )
 
             # Clear the canvas and redisplay the image
             self.canvas.delete("line")  # Remove any existing vertical line
             self.display_image(self.result_image)
 
             # Draw a vertical line at the calculated x position
-            self.canvas.create_line(x_pixel, 0, x_pixel, self.result_image.size[1], fill="blue", width=1, tags="line")
+            self.canvas.create_line(
+                x_pixel, 0, x_pixel, self.result_image.size[1],
+                fill="blue", width=1, tags="line"
+            )
 
             # Optionally, display the calculated y value
             messagebox.showinfo("Result", f"For x = {x_input}, y = {y_value:.2f}")
