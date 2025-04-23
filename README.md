@@ -47,7 +47,7 @@
 
 ### **6. Interpolation Algorithms**
 - **Objective**: Implement mathematical interpolation.
-  - Implement **Lagrange interpolation** (manual or via `scipy.interpolate.lagrange`).
+  - Implement **Lagrange interpolation** (manual or via `scipy.interpolate.lagrange`). (**Removed, because of high number of points!**)
   - Implement **Cubic Spline interpolation** (e.g., `scipy.interpolate.CubicSpline`).
 
 ### **7. Visualization**

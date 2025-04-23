@@ -1,7 +1,7 @@
 from image_processing import preprocess_image, detect_curve
 from data_extraction import pixel_to_data_coords
 from interpolation import interpolate_lagrange, interpolate_spline
-from visualization import plot_results, plot_only_data, plot_binary_image
+from visualization import plot_results_both, plot_only_data, plot_binary_image, plot_results_spline
 from utils import downsample_points
 import numpy as np
 
@@ -32,12 +32,12 @@ def main():
         raise ValueError("Not enough data points after downsampling for interpolation.")
 
     # Perform interpolation
-    #lagrange_poly = interpolate_lagrange(x_vals, y_vals)
-    #spline_func = interpolate_spline(x_vals, y_vals)
+    #lagrange_func, lagrange_expr = interpolate_lagrange(x_vals, y_vals)
+    spline_func = interpolate_spline(x_vals, y_vals)
  
     # Plot the results
-    #plot_results(x_vals, y_vals, lagrange_poly, spline_func, image)
-    plot_only_data(x_vals, y_vals, image)
+    plot_results_spline(x_vals, y_vals, spline_func, image)
+    #plot_only_data(x_vals, y_vals, image)
 
 if __name__ == "__main__":
     main()
