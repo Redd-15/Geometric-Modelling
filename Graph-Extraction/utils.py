@@ -47,7 +47,7 @@ def linear_interpolation(val, in_min, in_max, out_min, out_max):
     Returns:
         Interpolated value in the output range.
     """
-    return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+    return min( max( (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min, out_min), out_max)
 
 def validate_float_input(value, field_name):
     """

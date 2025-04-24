@@ -2,27 +2,41 @@ import cv2
 import numpy as np
 from utils import hex_to_bgr
 
-def preprocess_image(image, target_HEX_color):
+def preprocess_image(image, target_HEX_color, grid_corners):
     """
-    Preprocess the image to generate a binary mask for the target color.
+    Preprocess the image to generate a binary mask for the target color and mask out areas outside the selected rectangle.
     
     Args:
-        image_path: Path to the input image.
-        target_color: Tuple representing the BGR color to detect (e.g., (255, 0, 0) for blue).
-    
+        image: Input image as a NumPy array.
+        target_HEX_color: Hex color string representing the target color to detect (e.g., "#FF0000" for red).
+        grid_corners: List of two tuples [(x1, y1), (x2, y2)] defining the rectangle.
+
     Returns:
-        binary: Binary image where the target color is highlighted.
+        binary: Binary image where the target color is highlighted and areas outside the rectangle are blacked out.
     """
-    COLOR_TRESHOLD = 20 # Allowable color variation
+    COLOR_THRESHOLD = 20  # Allowable color variation
     target_color = hex_to_bgr(target_HEX_color)  # Convert hex color to BGR format
+
     # Create a mask for the target color
-    lower_bound = np.array(target_color) - COLOR_TRESHOLD
-    upper_bound = np.array(target_color) + COLOR_TRESHOLD
+    lower_bound = np.array(target_color) - COLOR_THRESHOLD
+    upper_bound = np.array(target_color) + COLOR_THRESHOLD
     mask = cv2.inRange(image, lower_bound, upper_bound)
 
     # Convert the mask to binary format
     _, binary = cv2.threshold(mask, 1, 255, cv2.THRESH_BINARY)
-    
+
+    # Ensure grid_corners are sorted correctly
+    (x1, y1), (x2, y2) = grid_corners
+    x_min, x_max = min(x1, x2), max(x1, x2)
+    y_min, y_max = min(y1, y2), max(y1, y2)
+
+    # Create a mask for the rectangle
+    rectangle_mask = np.zeros_like(binary, dtype=np.uint8)
+    cv2.rectangle(rectangle_mask, (x_min, y_min), (x_max, y_max), 255, thickness=-1)
+
+    # Apply the rectangle mask to the binary image
+    binary = cv2.bitwise_and(binary, rectangle_mask)
+
     return binary
 
 def detect_curve(binary_image):

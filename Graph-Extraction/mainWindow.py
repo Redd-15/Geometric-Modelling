@@ -4,7 +4,7 @@ import cv2
 from PIL import Image, ImageTk
 import numpy as np
 from image_processing import preprocess_image, detect_curve
-from data_extraction import pixel_to_data_coords
+from data_extraction import calculate_y_value, pixel_to_data_coords, export_to_csv
 from interpolation import interpolate_spline
 from visualization import plot_results_spline
 from utils import linear_interpolation, validate_float_input, RGB2BRG_in_hex
@@ -36,12 +36,17 @@ class GraphApp:
         # UI Elements
         self.create_widgets()
 
+        self.zoom_level = 1.0  # Initial zoom level
+        self.root.bind("<MouseWheel>", self.zoom)  # Bind mouse wheel for zooming
+
     def create_widgets(self):
+        
+        ttk.Label(self.root, text="Graph data values").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         # Input for image path
-        ttk.Label(self.root, text="Image Path:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.root, text="Image Path:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
         self.image_path_entry = ttk.Entry(self.root, width=50)
-        self.image_path_entry.grid(row=0, column=1, padx=5, pady=5, columnspan=2)
-        ttk.Button(self.root, text="Browse", command=self.browse_image).grid(row=0, column=3, padx=5, pady=5)
+        self.image_path_entry.grid(row=0, column=2, padx=5, pady=5, columnspan=2)
+        ttk.Button(self.root, text="Browse", command=self.browse_image).grid(row=0, column=4, padx=5, pady=5)
 
         # Input for base values in a single column
         ttk.Label(self.root, text="X Minimum Value:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
@@ -61,9 +66,10 @@ class GraphApp:
         self.y_max_entry.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
         # Input for datapoint density
-        ttk.Label(self.root, text="Datapoint Density:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
+        ttk.Label(self.root, text="Datapoint Density:\nThe less, the finer process grid (min: 1)").grid(row=5, column=0, padx=5, pady=5, sticky="w")
         self.data_density_entry = ttk.Entry(self.root, width=10)
         self.data_density_entry.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+        #ttk.Label(self.root, text="The less, the finer process rate (min: 1)").grid(row=6, column=0, padx=5, pady=5, sticky="w")
 
         # Graph color picker button
         ttk.Button(self.root, text="Graph Color Picker", command=self.enable_graph_color_picker).grid(row=6, column=0, padx=5, pady=5, sticky="w")
@@ -96,14 +102,22 @@ class GraphApp:
         self.canvas.bind("<Button-1>", self.select_corner)
 
         # Input field for x value and label
-        ttk.Label(self.root, text="Enter x value:").grid(row=11, column=2, padx=5, pady=5, sticky="e")
+        ttk.Label(self.root, text="Enter x value for value extraction:").grid(row=11, column=2, padx=5, pady=5, sticky="e")
         self.x_input_entry = ttk.Entry(self.root, width=15)
         self.x_input_entry.grid(row=11, column=3, padx=5, pady=5, sticky="w")
-        self.x_input_entry.bind("<Return>", self.calculate_y_value)  # Trigger calculation on Enter key
+        self.x_input_entry.bind("<Return>", self.calculate_y)  # Trigger calculation on Enter key
+
+        # Input field for the number of data points
+        ttk.Label(self.root, text="Number of Points for Export:").grid(row=11, column=4, padx=5, pady=5, sticky="e")
+        self.num_points_entry = ttk.Entry(self.root, width=15)
+        self.num_points_entry.grid(row=11, column=5, padx=5, pady=5, sticky="w")
+
+        # Button to export to CSV
+        ttk.Button(self.root, text="Export to CSV File", command=self.export_to_csv).grid(row=12, column=5, padx=5, pady=5, sticky="w")
 
         # Checkbox for inverting the x-axis
         self.invert_x_axis = tk.BooleanVar(value=False)  # Default: x-axis is not inverted
-        tk.Checkbutton(self.root, text="Invert X-Axis", variable=self.invert_x_axis, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=11, column=2, padx=5, pady=5, sticky="w")
+        tk.Checkbutton(self.root, text="Invert X-Axis in case of declining values", variable=self.invert_x_axis, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=11, column=2, padx=5, pady=5, sticky="w")
 
     def browse_image(self):
         # Open file dialog to select an image
@@ -143,16 +157,50 @@ class GraphApp:
         self.tk_result_image = ImageTk.PhotoImage(image)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_result_image)
 
+    def draw_image(self, image):
+        """
+        Draw the given image on the canvas, resizing it based on the current zoom level.
+
+        Args:
+            image: The image to be displayed (NumPy array or PIL Image).
+        """
+        if image is None:
+            return
+
+        # Handle NumPy array images
+        if isinstance(image, np.ndarray):
+            zoomed_image = cv2.resize(
+                image,
+                None,
+                fx=self.zoom_level,
+                fy=self.zoom_level,
+                interpolation=cv2.INTER_LINEAR
+            )
+            image = Image.fromarray(zoomed_image)
+
+        # Handle PIL images
+        elif isinstance(image, Image.Image):
+            # Resize the PIL image based on the zoom level
+            width, height = image.size
+            new_width = int(width * self.zoom_level)
+            new_height = int(height * self.zoom_level)
+            image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+        # Display the image on the canvas
+        self.display_image(image)
+
     def select_corner(self, event):
         """
         Record the clicked corner or remove the last selected point.
         """
-        x, y = event.x, event.y
+        # Adjust the canvas coordinates to image coordinates based on the zoom level
+        x = int(event.x / self.zoom_level)
+        y = int(event.y / self.zoom_level)
 
-        # Add a new point if fewer or more than 2 points are selected
+        # Add a new point if fewer than 2 points are selected
         if len(self.grid_corners) < 2:
             self.grid_corners.append((x, y))
-            self.canvas.create_oval(x-5, y-5, x+5, y+5, outline="red", width=2)
+            self.draw_corners()  # Draw all selected corners
             if len(self.grid_corners) == 2:
                 messagebox.showinfo("Info", "Grid corners selected!")
         else:
@@ -160,11 +208,13 @@ class GraphApp:
 
     def clear_points(self):
         """
-        Clear all selected points and reset the canvas.
+        Clear all selected points and reset the canvas without resetting the zoom level.
         """
         self.grid_corners = []  # Clear the list of selected points
         self.canvas.delete("all")  # Clear all drawings on the canvas
-        self.display_image(self.image)  # Redisplay the original image
+
+        # Redisplay the image at the current zoom level
+        self.draw_image(self.image)
 
     def process_image(self):
         # Ensure all inputs are provided
@@ -191,7 +241,7 @@ class GraphApp:
                 self.grid_corners[0], self.grid_corners[1] = self.grid_corners[1], self.grid_corners[0]  # Swap points if necessary
 
             # Process the image
-            preprocessed_image = preprocess_image(self.image, self.selected_graph_color)  # TODO: Make target color configurable
+            preprocessed_image = preprocess_image(self.image, self.selected_graph_color, self.grid_corners)  
             curve_pixels = detect_curve(preprocessed_image)
             data_points = pixel_to_data_coords(curve_pixels, self.data_density)
 
@@ -209,68 +259,45 @@ class GraphApp:
                 self.points_color, self.spline_color  # Pass the selected colors
             )
 
-            # Display the result image on the canvas
-            self.display_image(result_image)
-            self.result_image = result_image  # Store the result image for later use
+            # Store the result image for zooming and redisplay
+            self.result_image = result_image
+            self.draw_image(self.result_image)
+            self.draw_corners()  # Draw the selected corners on the image
 
         except ValueError as e:
             messagebox.showerror("Error", f"Invalid input: {e}")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
 
-    def calculate_y_value(self, event):
+    def calculate_y(self, event):
         """
         Calculate the y value for the given x input using the spline interpolation
         and draw a vertical line on the canvas at the corresponding point.
         """
         try:
-            # Get the x value from the input field
-            x_input = float(self.x_input_entry.get())
-
-            # Ensure the x value is within the valid range
-            if not (self.base_values["x_min"] <= x_input <= self.base_values["x_max"]):
-                messagebox.showerror("Error", f"x value must be between {self.base_values['x_min']} and {self.base_values['x_max']}.")
-                return
-
-            # Interpolate x_input to pixel coordinates (grid corners)
-            if self.invert_x_axis.get():
-                x_pixel = linear_interpolation(
-                    x_input,
-                    self.base_values["x_min"],
-                    self.base_values["x_max"],
-                    self.grid_corners[1][0],
-                    self.grid_corners[0][0]  # Reverse the mapping for inverted x-axis
-                )
-            else:
-                x_pixel = linear_interpolation(
-                    x_input,
-                    self.base_values["x_min"],
-                    self.base_values["x_max"],
-                    self.grid_corners[0][0],
-                    self.grid_corners[1][0]
-                )
+            x_input = float(self.x_input_entry.get())  # Get the x value from the input field
 
             # Use the spline function to calculate the corresponding pixel y value
-            y_pixel = self.spline_func(x_pixel)
-
-            # Interpolate y_pixel back to data coordinates (y_min to y_max)
-            y_value = linear_interpolation(
-                y_pixel,
-                self.grid_corners[1][1],  # Note: Reverse the mapping for y-axis inversion
-                self.grid_corners[0][1],
-                self.base_values["y_min"],
-                self.base_values["y_max"]
+            x_pixel, y_value = calculate_y_value(
+                x_input,
+                self.base_values,
+                self.grid_corners,
+                self.invert_x_axis.get(),
+                self.spline_func
             )
+            if y_value is None:
+                return
+
+            # Store the x_pixel position for redrawing after zoom
+            self.vertical_line_x = x_pixel
 
             # Clear the canvas and redisplay the image
             self.canvas.delete("line")  # Remove any existing vertical line
-            self.display_image(self.result_image)
+            self.draw_image(self.result_image)
 
             # Draw a vertical line at the calculated x position
-            self.canvas.create_line(
-                x_pixel, 0, x_pixel, self.result_image.size[1],
-                fill="blue", width=1, tags="line"
-            )
+            self.draw_vertical_line()
+            self.draw_corners()  # Redraw the selected corners
 
             # Optionally, display the calculated y value
             messagebox.showinfo("Result", f"For x = {x_input}, y = {y_value:.2f}")
@@ -315,19 +342,24 @@ class GraphApp:
         Update the Graph Color Picker square's background color to the selected color.
         """
         try:
-            # Get the x and y coordinates of the click
-            x, y = event.x, event.y
+            # Get the x and y coordinates of the click on the canvas
+            canvas_x, canvas_y = event.x, event.y
 
             # Ensure the image is loaded
             if self.image is None:
                 messagebox.showerror("Error", "No image loaded.")
                 return
 
-            # Convert the canvas coordinates to image coordinates
-            if 0 <= x < self.image.shape[1] and 0 <= y < self.image.shape[0]:
-                # Get the color of the pixel at (x, y)
-                b, g, r = self.image[y, x]  # OpenCV uses BGR format
-                self.selected_graph_color = f"#{r:02x}{g:02x}{b:02x}"  # Convert to hex format, but image is in BRG format so that needs converting too
+            # Adjust the canvas coordinates to image coordinates based on the zoom level
+            image_x = int(canvas_x / self.zoom_level)
+            image_y = int(canvas_y / self.zoom_level)
+
+            # Ensure the coordinates are within the image boundaries
+            if 0 <= image_x < self.image.shape[1] and 0 <= image_y < self.image.shape[0]:
+                # Get the color of the pixel at (image_x, image_y)
+                b, g, r = self.image[image_y, image_x]  # OpenCV uses BGR format
+                self.selected_graph_color = f"#{r:02x}{g:02x}{b:02x}"  # Convert to hex format
+
                 # Display the selected color
                 messagebox.showinfo("Selected Color", f"Selected Graph Color: {self.selected_graph_color}")
 
@@ -340,6 +372,93 @@ class GraphApp:
                 messagebox.showerror("Error", "Click within the image boundaries.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def export_to_csv(self):
+        """
+        Export the specified number of (x, y) points to a CSV file.
+        """
+        # Ensure the spline function is available
+        if not hasattr(self, "spline_func"):
+            messagebox.showerror("Error", "No spline function available. Process the image first.")
+            return
+        
+        try:
+            # Get the number of points from the input field
+            num_points = int(self.num_points_entry.get())
+            
+            if num_points <= 0:
+                raise ValueError("Number of points must be a positive integer.")
+
+            # Call the export_to_csv function from data_extraction.py
+            file_path = export_to_csv(self.spline_func, self.base_values["x_min"], self.base_values["x_max"], num_points, self.base_values, self.grid_corners, self.invert_x_axis.get())
+            messagebox.showinfo("Success", f"CSV file saved successfully at {file_path}.")
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid input: {e}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def zoom(self, event):
+        """
+        Zoom in or out on the canvas using the mouse wheel.
+        """
+        try:
+            # Adjust zoom level based on scroll direction
+            if event.delta > 0:  # Scroll up to zoom in
+                self.zoom_level *= 1.1
+            elif event.delta < 0:  # Scroll down to zoom out
+                self.zoom_level /= 1.1
+
+            # Limit zoom level to a reasonable range
+            self.zoom_level = max(0.1, min(self.zoom_level, 10.0))
+
+            # Redisplay the image at the new zoom level
+            if hasattr(self, "result_image") and self.result_image is not None:
+                self.draw_image(self.result_image)  # Resize and display the processed image
+            elif self.image is not None:
+                self.draw_image(self.image)  # Resize and display the original image
+
+            # Redraw the selected corners
+            self.draw_corners()
+
+            # Redraw the vertical line if it exists
+            if hasattr(self, "vertical_line_x"):
+                self.draw_vertical_line()
+                
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred during zooming: {e}")
+
+    def draw_corners(self):
+        """
+        Draw the circles for the selected corners on the canvas.
+        """
+        if not self.grid_corners:
+            return
+
+        self.canvas.delete("corner")  # Remove existing corner markers
+        for x, y in self.grid_corners:
+            # Adjust the coordinates for the current zoom level
+            canvas_x = int(x * self.zoom_level)
+            canvas_y = int(y * self.zoom_level)
+            self.canvas.create_oval(
+                canvas_x - 5, canvas_y - 5, canvas_x + 5, canvas_y + 5,
+                outline="red", width=2, tags="corner"
+            )
+
+    def draw_vertical_line(self):
+        """
+        Draw the vertical line at the stored x position, adjusted for the current zoom level.
+        """
+        if hasattr(self, "vertical_line_x"):
+            # Adjust the x position for the current zoom level
+            canvas_x = int(self.vertical_line_x * self.zoom_level)
+
+            # Draw the vertical line on the canvas
+            self.canvas.create_line(
+                canvas_x, 0, canvas_x, max(self.image.shape[1] * self.zoom_level, self.result_image.height*self.zoom_level),
+                fill="blue", width=1, tags="line"
+            )
 
 # Run the app
 if __name__ == "__main__":
