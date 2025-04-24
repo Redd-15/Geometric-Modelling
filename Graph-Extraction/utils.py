@@ -48,3 +48,27 @@ def linear_interpolation(val, in_min, in_max, out_min, out_max):
         Interpolated value in the output range.
     """
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def validate_float_input(value, field_name):
+    """
+    Validate that the input value can be converted to a float.
+    
+    Args:
+        value: The input value as a string.
+        field_name: The name of the field (for error messages).
+    
+    Returns:
+        The input value converted to a float.
+    
+    Raises:
+        ValueError: If the input value is empty or cannot be converted to a float.
+    """
+    if not value.strip():
+        raise ValueError(f"{field_name} cannot be empty.")
+    try:
+        return float(value)
+    except ValueError:
+        raise ValueError(f"{field_name} must be a valid number.")
+    
+def RGB2BRG_in_hex(rgb):
+    return f"#{rgb[5:7]}{rgb[3:5]}{rgb[1:3]}"

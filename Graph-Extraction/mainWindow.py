@@ -7,7 +7,7 @@ from image_processing import preprocess_image, detect_curve
 from data_extraction import pixel_to_data_coords
 from interpolation import interpolate_spline
 from visualization import plot_results_spline
-from utils import linear_interpolation
+from utils import linear_interpolation, validate_float_input, RGB2BRG_in_hex
 
 class GraphApp:
     def __init__(self, root):
@@ -24,7 +24,7 @@ class GraphApp:
         # Default colors for spline and points
         self.spline_color = "#00FF00"  # Green
         self.points_color = "#FF0000"  # Red
-        self.selected_graph_color = "#000000"  # Default graph color (black)
+        self.selected_graph_color = "#FFFFFF"  # Default graph color (black)
 
         # Apply a modern theme
         self.style = ttk.Style()
@@ -65,23 +65,30 @@ class GraphApp:
         self.data_density_entry = ttk.Entry(self.root, width=10)
         self.data_density_entry.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
+        # Graph color picker button
+        ttk.Button(self.root, text="Graph Color Picker", command=self.enable_graph_color_picker).grid(row=6, column=0, padx=5, pady=5, sticky="w")
+        self.graph_color_square = tk.Label(self.root, bg=self.selected_graph_color, width=2, height=1)
+        self.graph_color_square.grid(row=6, column=1, padx=5, pady=5, sticky="w")
+
+        # Color pickers for spline and points
+        ttk.Button(self.root, text="Pick Spline Color", command=self.pick_spline_color).grid(row=7, column=0, padx=5, pady=5, sticky="w")
+        self.spline_color_square = tk.Label(self.root, bg=self.spline_color, width=2, height=1)
+        self.spline_color_square.grid(row=7, column=1, padx=5, pady=5, sticky="w")
+
+        ttk.Button(self.root, text="Pick Points Color", command=self.pick_points_color).grid(row=8, column=0, padx=5, pady=5, sticky="w")
+        self.points_color_square = tk.Label(self.root, bg=self.points_color, width=2, height=1)
+        self.points_color_square.grid(row=8, column=1, padx=5, pady=5, sticky="w")
+
         # Checkboxes for visualization options
         self.show_spline = tk.BooleanVar(value=True)
         self.show_points = tk.BooleanVar(value=True)
 
-        tk.Checkbutton(self.root, text="Show Spline", variable=self.show_spline, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=8, column=0, padx=5, pady=5, sticky="w")
-        tk.Checkbutton(self.root, text="Show Points", variable=self.show_points, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=8, column=1, padx=5, pady=5, sticky="w")
-
-        # Graph color picker button
-        ttk.Button(self.root, text="Graph Color Picker", command=self.enable_graph_color_picker).grid(row=6, column=0, padx=5, pady=5, sticky="w")
-
-        # Color pickers for spline and points
-        ttk.Button(self.root, text="Pick Spline Color", command=self.pick_spline_color).grid(row=7, column=0, padx=5, pady=5, sticky="w")
-        ttk.Button(self.root, text="Pick Points Color", command=self.pick_points_color).grid(row=7, column=1, padx=5, pady=5, sticky="w")
+        tk.Checkbutton(self.root, text="Show Spline", variable=self.show_spline, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=9, column=0, padx=5, pady=5, sticky="w")
+        tk.Checkbutton(self.root, text="Show Points", variable=self.show_points, bg="#2E2E2E", fg="white", selectcolor="#4E4E4E").grid(row=9, column=1, padx=5, pady=5, sticky="w")
 
         # Buttons below the input fields
-        ttk.Button(self.root, text="Process", command=self.process_image).grid(row=9, column=0, padx=5, pady=10, sticky="w")
-        ttk.Button(self.root, text="Clear Points", command=self.clear_points).grid(row=9, column=1, padx=5, pady=10, sticky="w")
+        ttk.Button(self.root, text="Process", command=self.process_image).grid(row=10, column=0, padx=5, pady=10, sticky="w")
+        ttk.Button(self.root, text="Clear Points", command=self.clear_points).grid(row=10, column=1, padx=5, pady=10, sticky="w")
 
         # Canvas for displaying the image
         self.canvas = tk.Canvas(self.root, width=800, height=500, bg="#1E1E1E", highlightthickness=0)
@@ -159,27 +166,6 @@ class GraphApp:
         self.canvas.delete("all")  # Clear all drawings on the canvas
         self.display_image(self.image)  # Redisplay the original image
 
-    def validate_input(self, value, field_name):
-        """
-        Validate that the input value can be converted to a float.
-        
-        Args:
-            value: The input value as a string.
-            field_name: The name of the field (for error messages).
-        
-        Returns:
-            The input value converted to a float.
-        
-        Raises:
-            ValueError: If the input value is empty or cannot be converted to a float.
-        """
-        if not value.strip():
-            raise ValueError(f"{field_name} cannot be empty.")
-        try:
-            return float(value)
-        except ValueError:
-            raise ValueError(f"{field_name} must be a valid number.")
-
     def process_image(self):
         # Ensure all inputs are provided
         if not self.image_path:
@@ -191,13 +177,13 @@ class GraphApp:
 
         try:
             # Validate and get base values from user input
-            self.base_values["x_min"] = self.validate_input(self.x_min_entry.get(), "x_min")
-            self.base_values["x_max"] = self.validate_input(self.x_max_entry.get(), "x_max")
-            self.base_values["y_min"] = self.validate_input(self.y_min_entry.get(), "y_min")
-            self.base_values["y_max"] = self.validate_input(self.y_max_entry.get(), "y_max")
+            self.base_values["x_min"] = validate_float_input(self.x_min_entry.get(), "x_min")
+            self.base_values["x_max"] = validate_float_input(self.x_max_entry.get(), "x_max")
+            self.base_values["y_min"] = validate_float_input(self.y_min_entry.get(), "y_min")
+            self.base_values["y_max"] = validate_float_input(self.y_max_entry.get(), "y_max")
 
             # Get datapoint density
-            self.data_density = int(self.validate_input(self.data_density_entry.get(), "Datapoint Density"))
+            self.data_density = int(validate_float_input(self.data_density_entry.get(), "Datapoint Density"))
             if self.data_density <= 0:
                 raise ValueError("Datapoint Density must be a positive integer.")
 
@@ -297,18 +283,24 @@ class GraphApp:
     def pick_spline_color(self):
         """
         Open a color picker dialog to select the color for the spline.
+        Update the spline color square's background color to the selected color.
         """
         color_code = colorchooser.askcolor(title="Pick Spline Color")[1]
         if color_code:
             self.spline_color = color_code  # Store the selected color
+            # Update the spline color square's background color
+            self.spline_color_square.configure(bg=self.spline_color)
 
     def pick_points_color(self):
         """
         Open a color picker dialog to select the color for the points.
+        Update the points color square's background color to the selected color.
         """
         color_code = colorchooser.askcolor(title="Pick Points Color")[1]
         if color_code:
             self.points_color = color_code  # Store the selected color
+            # Update the points color square's background color
+            self.points_color_square.configure(bg=self.points_color)
 
     def enable_graph_color_picker(self):
         """
@@ -320,6 +312,7 @@ class GraphApp:
     def pick_graph_color(self, event):
         """
         Get the color of the pixel clicked on the image and store it in self.selected_graph_color.
+        Update the Graph Color Picker square's background color to the selected color.
         """
         try:
             # Get the x and y coordinates of the click
@@ -334,10 +327,12 @@ class GraphApp:
             if 0 <= x < self.image.shape[1] and 0 <= y < self.image.shape[0]:
                 # Get the color of the pixel at (x, y)
                 b, g, r = self.image[y, x]  # OpenCV uses BGR format
-                self.selected_graph_color = f"#{r:02x}{g:02x}{b:02x}"  # Convert to hex format
-
+                self.selected_graph_color = f"#{r:02x}{g:02x}{b:02x}"  # Convert to hex format, but image is in BRG format so that needs converting too
                 # Display the selected color
                 messagebox.showinfo("Selected Color", f"Selected Graph Color: {self.selected_graph_color}")
+
+                # Update the Graph Color Picker square's background color
+                self.graph_color_square.configure(bg=RGB2BRG_in_hex(self.selected_graph_color))
 
                 # Unbind the click event after selection
                 self.canvas.bind("<Button-1>", self.select_corner)  # Rebind to select_corner
@@ -349,5 +344,5 @@ class GraphApp:
 # Run the app
 if __name__ == "__main__":
     root = tk.Tk()
-    app = GraphApp(root)    
+    app = GraphApp(root)
     root.mainloop()

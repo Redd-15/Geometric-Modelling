@@ -43,7 +43,7 @@ def detect_curve(binary_image):
     averaged_points = []
     for x in unique_xs:
         y_values = ys[xs == x]
-        avg_y = np.min(y_values) + np.max(y_values) / 2  # Average y-coordinate
+        avg_y = (np.min(y_values) + np.max(y_values)) / 2  # Average y-coordinate
         averaged_points.append((x, avg_y))
     
     return averaged_points

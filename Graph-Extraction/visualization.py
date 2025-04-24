@@ -37,25 +37,15 @@ def plot_results_spline(x_vals, y_vals, spline_func, original_image, selected_po
         x_range = np.linspace(min(x_vals), max(x_vals), 500)
         y_spline = spline_func(x_range)
 
-        # Normalize coordinates to pixel space
-        x_min, x_max = min(x_vals), max(x_vals)
-        y_min, y_max = min(y_vals), max(y_vals)
-
-        def normalize_x(x): # Normalize x to pixel space and shift it to proper position
-            return int(((x - x_min) / (x_max - x_min) * (data_width - 1)) + selected_points[0][0])
-
-        def normalize_y(y):
-            return int((((y - y_min) / (y_max - y_min)) * (data_height - 1)) + selected_points[0][1])  # Flip y-axis for image coordinates
-
         # Draw the extracted points
         if show_points:
             for x, y in zip(x_vals, y_vals):
-                cv2.circle(image_copy, (normalize_x(x), normalize_y(y)), radius=5, color=hex_to_bgr(points_color), thickness=-1)
+                cv2.circle(image_copy, (int(x), int(y)), radius=5, color=hex_to_bgr(points_color), thickness=-1)
 
         # Draw the spline curve
         
         if show_spline:    
-            spline_points = np.array([[normalize_x(x), normalize_y(y)] for x, y in zip(x_range, y_spline)], dtype=np.int32)
+            spline_points = np.array([[int(x), int(y)] for x, y in zip(x_range, y_spline)], dtype=np.int32)
             cv2.polylines(image_copy, [spline_points], isClosed=False, color=hex_to_bgr(spline_color), thickness=2)
 
     # Convert the OpenCV image (BGR) to a PIL Image (RGB)
