@@ -25,20 +25,20 @@
 ### **2. Preprocessing the Image**
 - **Objective**: Prepare the image for feature extraction.
   - Convert to grayscale or binary (thresholding) using `OpenCV`.
-  - Apply edge detection (e.g., Canny).
+  - Apply edge detection (e.g., Canny). (**Not needed.**)
   - Clean up noise (morphological operations: erosion, dilation).
 
 ### **3. Axis and Scale Detection**
 - **Objective**: Detect axes and determine the coordinate system.
   - Identify x- and y-axes using Hough line transform.
   - Optionally ask user to mark known points or origin.
-  - Implement a manual mode if auto-detection fails.
+  - Implement a manual mode if auto-detection fails. (**Stayed at simplest solution for maximising accuracy.**)
 
 ### **4. Data Point Extraction**
 - **Objective**: Extract coordinates of the plotted curve.
   - Detect curve pixels using color or intensity segmentation.
   - Transform image coordinates to data coordinates based on axis scale.
-  - Interpolate or simplify points (e.g., with Ramer–Douglas–Peucker algorithm).
+  - Interpolate or simplify points (e.g., with Ramer–Douglas–Peucker algorithm). (**Point density can be choosen by user.**)
 
 ### **5. Coordinate Calibration**
 - **Objective**: Map image pixel positions to actual (x, y) data values.
@@ -65,6 +65,8 @@
 ### **9. Export Results**
 - **Objective**: Provide output in usable formats.
   - Save interpolated function results to CSV or TXT.
-  - Save plots as PNG/PDF.
-  - Allow function export (e.g., as symbolic expression using `sympy`).
+  - Save plots as PNG/PDF. (Not required if csv export is possible)
+  - Allow function export (e.g., as symbolic expression using `sympy`). (**Possible, but not implemented.**)
 
+
+>[!IMPORTANT] **Out of the 9 objectives all were met during development. Some was only possible in part, but I would say the project was highly succesful
