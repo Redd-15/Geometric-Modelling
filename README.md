@@ -69,4 +69,5 @@
   - Allow function export (e.g., as symbolic expression using `sympy`). (**Possible, but not implemented.**)
 
 
->[!IMPORTANT] **Out of the 9 objectives all were met during development. Some was only possible in part, but I would say the project was highly succesful
+> [!IMPORTANT]
+> **Out of the 9 objectives all were met during development. Some was only possible in part, but I would say the project was highly succesful**
