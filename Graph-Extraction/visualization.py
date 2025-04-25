@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-from io import BytesIO
 from PIL import Image
 from utils import hex_to_bgr
 

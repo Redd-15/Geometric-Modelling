@@ -4,10 +4,10 @@ import cv2
 from PIL import Image, ImageTk
 import numpy as np
 from image_processing import preprocess_image, detect_curve
-from data_extraction import calculate_y_value, pixel_to_data_coords, export_to_csv
+from data_extraction import calculate_y_value, convert_pixel_to_data_coords, export_to_csv
 from interpolation import interpolate_spline
 from visualization import plot_results_spline
-from utils import linear_interpolation, validate_float_input, RGB2BRG_in_hex
+from utils import validate_float_input, convert_RGB2BRG_in_hex
 
 class GraphApp:
     def __init__(self, root):
@@ -243,7 +243,7 @@ class GraphApp:
             # Process the image
             preprocessed_image = preprocess_image(self.image, self.selected_graph_color, self.grid_corners)  
             curve_pixels = detect_curve(preprocessed_image)
-            data_points = pixel_to_data_coords(curve_pixels, self.data_density)
+            data_points = convert_pixel_to_data_coords(curve_pixels, self.data_density)
 
             # Separate x and y values
             x_vals, y_vals = zip(*data_points)
@@ -364,7 +364,7 @@ class GraphApp:
                 messagebox.showinfo("Selected Color", f"Selected Graph Color: {self.selected_graph_color}")
 
                 # Update the Graph Color Picker square's background color
-                self.graph_color_square.configure(bg=RGB2BRG_in_hex(self.selected_graph_color))
+                self.graph_color_square.configure(bg=convert_RGB2BRG_in_hex(self.selected_graph_color))
 
                 # Unbind the click event after selection
                 self.canvas.bind("<Button-1>", self.select_corner)  # Rebind to select_corner

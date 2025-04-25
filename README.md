@@ -19,7 +19,7 @@
 
 ### **1. Input Handling**
 - **Objective**: Load graph images into your program.
-  - Use `Pillow`, `OpenCV`, or `matplotlib` for image input.
+  - Use `OpenCV` for image input.
 
 
 ### **2. Preprocessing the Image**
@@ -30,9 +30,9 @@
 
 ### **3. Axis and Scale Detection**
 - **Objective**: Detect axes and determine the coordinate system.
-  - Identify x- and y-axes using Hough line transform.
+  - Identify x- and y-axes using Hough line transform. (**Not needed.**)
   - Optionally ask user to mark known points or origin.
-  - Implement a manual mode if auto-detection fails. (**Stayed at simplest solution for maximising accuracy.**)
+  - Implement a manual mode if auto-detection fails. (**Stayed at simplest solution for maximizing accuracy.**)
 
 ### **4. Data Point Extraction**
 - **Objective**: Extract coordinates of the plotted curve.
@@ -65,9 +65,9 @@
 ### **9. Export Results**
 - **Objective**: Provide output in usable formats.
   - Save interpolated function results to CSV or TXT.
-  - Save plots as PNG/PDF. (Not required if csv export is possible)
+  - Save plots as PNG/PDF. (Not required if CSV export is possible)
   - Allow function export (e.g., as symbolic expression using `sympy`). (**Possible, but not implemented.**)
 
 
 > [!IMPORTANT]
-> **Out of the 9 objectives all were met during development. Some was only possible in part, but I would say the project was highly succesful**
+> **Out of the 9 objectives all were met during development. Some was only possible in part, but I would say the project was highly successful**

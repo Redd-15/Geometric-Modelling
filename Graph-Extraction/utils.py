@@ -33,7 +33,7 @@ def hex_to_bgr(hex_color):
     hex_color = hex_color.lstrip("#")
     return tuple(int(hex_color[i:i+2], 16) for i in (4, 2, 0))
 
-def linear_interpolation(val, in_min, in_max, out_min, out_max):
+def interpolate_linearly(val, in_min, in_max, out_min, out_max):
     """
     Perform linear interpolation to map a value from one range to another.
     
@@ -70,5 +70,5 @@ def validate_float_input(value, field_name):
     except ValueError:
         raise ValueError(f"{field_name} must be a valid number.")
     
-def RGB2BRG_in_hex(rgb):
+def convert_RGB2BRG_in_hex(rgb):
     return f"#{rgb[5:7]}{rgb[3:5]}{rgb[1:3]}"

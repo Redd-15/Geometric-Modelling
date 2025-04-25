@@ -1,8 +1,8 @@
 import numpy as np
 from tkinter import filedialog
-from utils import linear_interpolation
+from utils import interpolate_linearly
 
-def pixel_to_data_coords(pixel_points, density=1):
+def convert_pixel_to_data_coords(pixel_points, density=1):
     data_points = []
     for i, (x, y) in enumerate(pixel_points):
         if i % density == 0:  # Only append every nth point
@@ -26,7 +26,7 @@ def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_
 
             # Interpolate x_input to pixel coordinates (grid corners)
             if invert_x_axis:
-                x_pixel = grid_corners[1][0] + grid_corners[0][0] - linear_interpolation(
+                x_pixel = grid_corners[1][0] + grid_corners[0][0] - interpolate_linearly(
                     x_input,
                     base_values["x_min"],
                     base_values["x_max"],
@@ -34,7 +34,7 @@ def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_
                     grid_corners[1][0]# Reverse the mapping for inverted x-axis
                 )
             else:
-                x_pixel = linear_interpolation(
+                x_pixel = interpolate_linearly(
                     x_input,
                     base_values["x_min"],
                     base_values["x_max"],
@@ -46,7 +46,7 @@ def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_
             y_pixel = spline_func(x_pixel)
 
             # Interpolate y_pixel back to data coordinates (y_min to y_max)
-            y_value = linear_interpolation(
+            y_value = interpolate_linearly(
                 y_pixel,
                 grid_corners[1][1],  # Note: Reverse the mapping for y-axis inversion
                 grid_corners[0][1],
