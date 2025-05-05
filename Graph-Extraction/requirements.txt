@@ -1,6 +1,0 @@
-tkinter
-cv2
-PIL
-numpy
-scipy
-matplotlib
