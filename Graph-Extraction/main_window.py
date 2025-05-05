@@ -4,7 +4,7 @@ import cv2
 from PIL import Image, ImageTk
 import numpy as np
 from image_processing import preprocess_image, detect_curve
-from data_extraction import calculate_y_value, convert_pixel_to_data_coords, export_to_csv
+from data_extraction import calculate_y_value, convert_pixel_to_data_coords, export_to_csv, average_deviation_calculation
 from interpolation import interpolate_spline
 from visualization import plot_results_spline
 from utils import validate_float_input, convert_RGB2BRG_in_hex
@@ -95,6 +95,9 @@ class GraphApp:
         # Buttons below the input fields
         ttk.Button(self.root, text="Process", command=self.process_image).grid(row=10, column=0, padx=5, pady=10, sticky="w")
         ttk.Button(self.root, text="Clear Points", command=self.clear_points).grid(row=10, column=1, padx=5, pady=10, sticky="w")
+        self.average_deviation_label = tk.Label(self.root, text="Average Deviation = None")
+        self.average_deviation_label.grid(row=11, column=0, padx=5, pady=5, sticky="w")
+
 
         # Canvas for displaying the image
         self.canvas = tk.Canvas(self.root, width=800, height=500, bg="#1E1E1E", highlightthickness=0)
@@ -243,7 +246,14 @@ class GraphApp:
             # Process the image
             preprocessed_image = preprocess_image(self.image, self.selected_graph_color, self.grid_corners)  
             curve_pixels = detect_curve(preprocessed_image)
+
+            all_data_points = convert_pixel_to_data_coords(curve_pixels, 1)
             data_points = convert_pixel_to_data_coords(curve_pixels, self.data_density)
+
+            # Separate x and y values on all data points
+            all_x_vals, all_y_vals = zip(*all_data_points)
+            all_x_vals = np.array(all_x_vals)
+            all_y_vals = np.array(all_y_vals)
 
             # Separate x and y values
             x_vals, y_vals = zip(*data_points)
@@ -251,6 +261,7 @@ class GraphApp:
             y_vals = np.array(y_vals)
 
             # Perform interpolation
+            self.base_spline_func = interpolate_spline(all_x_vals, all_y_vals)  # Store the most accurate spline function for later use
             self.spline_func = interpolate_spline(x_vals, y_vals)  # Store the spline function for later use
 
             result_image = plot_results_spline(
@@ -263,6 +274,9 @@ class GraphApp:
             self.result_image = result_image
             self.draw_image(self.result_image)
             self.draw_corners()  # Draw the selected corners on the image
+
+            avg_y_deviation = average_deviation_calculation(all_x_vals, self.base_spline_func, self.spline_func)
+            self.average_deviation_label.configure(text=f"Average Deviation = {avg_y_deviation:.2f}")
 
         except ValueError as e:
             messagebox.showerror("Error", f"Invalid input: {e}")

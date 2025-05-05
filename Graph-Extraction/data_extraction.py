@@ -4,13 +4,16 @@ from utils import interpolate_linearly
 
 def convert_pixel_to_data_coords(pixel_points, density=1):
     data_points = []
+
     for i, (x, y) in enumerate(pixel_points):
         if i % density == 0:  # Only append every nth point
             data_x = x
             data_y = y
             data_points.append((data_x, data_y))
+
     if data_points[-1] != pixel_points[-1]:
         data_points.append(pixel_points[-1])
+
     return data_points
 
 def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_func):
@@ -23,7 +26,6 @@ def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_
             if not (base_values["x_min"] <= x_input <= base_values["x_max"]):
                 raise ValueError(f"x value must be between {base_values['x_min']} and {base_values['x_max']}.")
                 
-
             # Interpolate x_input to pixel coordinates (grid corners)
             if invert_x_axis:
                 x_pixel = grid_corners[1][0] + grid_corners[0][0] - interpolate_linearly(
@@ -33,6 +35,7 @@ def calculate_y_value(x_input, base_values, grid_corners, invert_x_axis, spline_
                     grid_corners[0][0],
                     grid_corners[1][0]# Reverse the mapping for inverted x-axis
                 )
+
             else:
                 x_pixel = interpolate_linearly(
                     x_input,
@@ -83,6 +86,7 @@ def export_to_csv(spline_func, x_min, x_max, num_points, base_values, grid_corne
 
         # Ask the user for a file location to save the CSV
         file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
+        
         if not file_path:
             return  # User canceled the save dialog
 
@@ -99,3 +103,30 @@ def export_to_csv(spline_func, x_min, x_max, num_points, base_values, grid_corne
     except Exception as e:
         raise Exception(e)
 
+def average_deviation_calculation(x_vals, base_spline_func, spline_func):
+    """
+    Calculate the average deviation of the spline function from the base data points.
+
+    Args:
+        
+        x_vals: The x values of the data points.
+        base_spline_func: The base spline function to compare against.
+        spline_func: The spline function to calculate the interpolated y values.
+
+    Returns:
+        float: The average deviation.
+    """
+    try:
+        deviations = []
+        y_base_spline = base_spline_func(x_vals)
+        y_spline = spline_func(x_vals)
+
+        for i in range(len(x_vals)):
+            # Calculate the absolute deviation between the two spline functions
+            deviation = abs(y_base_spline[i] - y_spline[i])
+            deviations.append(deviation)
+        
+        return np.mean(deviations)
+
+    except Exception as e:
+        raise Exception(e)

@@ -27,13 +27,10 @@ def plot_results_spline(x_vals, y_vals, spline_func, original_image, selected_po
     # Generate x range for interpolation
     if show_points or show_spline:
         
-        if selected_points and len(selected_points) == 2:
-            data_width = abs(selected_points[1][0] - selected_points[0][0])
-            data_height = abs(selected_points[1][1] - selected_points[0][1])
-        else:
-            raise ValueError("Invalid points selected.")
+        if not (selected_points and len(selected_points) == 2):
+            raise ValueError("Invalid points selected. Please select two points.")
         
-        x_range = np.linspace(min(x_vals), max(x_vals), 500)
+        x_range = np.linspace(min(x_vals), max(x_vals), max(x_vals) - min(x_vals) + 1)
         y_spline = spline_func(x_range)
 
         # Draw the extracted points

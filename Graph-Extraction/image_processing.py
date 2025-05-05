@@ -20,10 +20,7 @@ def preprocess_image(image, target_HEX_color, grid_corners):
     # Create a mask for the target color
     lower_bound = np.array(target_color) - COLOR_THRESHOLD
     upper_bound = np.array(target_color) + COLOR_THRESHOLD
-    mask = cv2.inRange(image, lower_bound, upper_bound)
-
-    # Convert the mask to binary format
-    _, binary = cv2.threshold(mask, 1, 255, cv2.THRESH_BINARY)
+    binary = cv2.inRange(image, lower_bound, upper_bound)
 
     # Ensure grid_corners are sorted correctly
     (x1, y1), (x2, y2) = grid_corners
